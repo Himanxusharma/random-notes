@@ -3690,6 +3690,8 @@ function convertToPlainText(html) {
     text = text.replace(/<del>(.*?)<\/del>/gi, "~~$1~~");
     // Remove any other HTML tags
     text = text.replace(/<[^>]*>/g, "");
+    // Remove zero-width spaces (used for cursor positioning)
+    text = text.replace(/\u200B/g, "");
     return text;
 }
 function EditorArea({ file, onContentChange, syntaxTheme, splitView, settings, onClipboardAdd, onToggleWordWrap, distractionFree, onToggleDistractionFree }) {
@@ -3702,8 +3704,15 @@ function EditorArea({ file, onContentChange, syntaxTheme, splitView, settings, o
     // Store the actual Range object to restore selection after context menu actions
     const savedRangeRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(null);
     const savedTextRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])("");
+    // Track if user is actively editing to prevent innerHTML sync from resetting cursor
+    const isEditingRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRef"])(false);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "EditorArea.useEffect": ()=>{
+            // Skip innerHTML sync while user is actively editing to preserve cursor position
+            if (isEditingRef.current) {
+                isEditingRef.current = false;
+                return;
+            }
             if (editorRef.current) {
                 const htmlContent = convertToHTML(file.content);
                 if (editorRef.current.innerHTML !== htmlContent) {
@@ -4158,6 +4167,8 @@ function EditorArea({ file, onContentChange, syntaxTheme, splitView, settings, o
     };
     const handleInput = ()=>{
         if (editorRef.current) {
+            // Set editing flag to prevent useEffect from resetting innerHTML and cursor
+            isEditingRef.current = true;
             const plainText = convertToPlainText(editorRef.current.innerHTML);
             onContentChange(plainText);
         }
@@ -4165,18 +4176,11 @@ function EditorArea({ file, onContentChange, syntaxTheme, splitView, settings, o
     const handleKeyDown = (e)=>{
         if (e.key === "Enter") {
             e.preventDefault();
-            const selection = window.getSelection();
-            if (!selection || selection.rangeCount === 0) return;
-            const range = selection.getRangeAt(0);
-            range.deleteContents();
-            const br = document.createElement("br");
-            range.insertNode(br);
-            // Move cursor after the br
-            range.setStartAfter(br);
-            range.setEndAfter(br);
-            selection.removeAllRanges();
-            selection.addRange(range);
+            // Use the browser's native line break insertion which handles cursor positioning correctly
+            document.execCommand("insertLineBreak");
             if (editorRef.current) {
+                // Set editing flag to prevent useEffect from resetting innerHTML and cursor
+                isEditingRef.current = true;
                 const plainText = convertToPlainText(editorRef.current.innerHTML);
                 onContentChange(plainText);
             }
@@ -4191,7 +4195,7 @@ function EditorArea({ file, onContentChange, syntaxTheme, splitView, settings, o
                 children: "Exit Focus Mode"
             }, void 0, false, {
                 fileName: "[project]/components/notepad/editor-area.tsx",
-                lineNumber: 673,
+                lineNumber: 675,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4217,12 +4221,12 @@ function EditorArea({ file, onContentChange, syntaxTheme, splitView, settings, o
                             suppressContentEditableWarning: true
                         }, void 0, false, {
                             fileName: "[project]/components/notepad/editor-area.tsx",
-                            lineNumber: 687,
+                            lineNumber: 689,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/notepad/editor-area.tsx",
-                        lineNumber: 686,
+                        lineNumber: 688,
                         columnNumber: 9
                     }, this),
                     splitView !== "none" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4244,18 +4248,18 @@ function EditorArea({ file, onContentChange, syntaxTheme, splitView, settings, o
                             suppressContentEditableWarning: true
                         }, void 0, false, {
                             fileName: "[project]/components/notepad/editor-area.tsx",
-                            lineNumber: 710,
+                            lineNumber: 712,
                             columnNumber: 13
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/notepad/editor-area.tsx",
-                        lineNumber: 709,
+                        lineNumber: 711,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/notepad/editor-area.tsx",
-                lineNumber: 681,
+                lineNumber: 683,
                 columnNumber: 7
             }, this),
             selectionPos && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$notepad$2f$text$2d$selection$2d$toolbar$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TextSelectionToolbar"], {
@@ -4273,7 +4277,7 @@ function EditorArea({ file, onContentChange, syntaxTheme, splitView, settings, o
                 onHeading: handleHeading
             }, void 0, false, {
                 fileName: "[project]/components/notepad/editor-area.tsx",
-                lineNumber: 731,
+                lineNumber: 733,
                 columnNumber: 9
             }, this),
             contextMenu && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$notepad$2f$context$2d$menu$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["ContextMenu"], {
@@ -4286,17 +4290,17 @@ function EditorArea({ file, onContentChange, syntaxTheme, splitView, settings, o
                 }
             }, void 0, false, {
                 fileName: "[project]/components/notepad/editor-area.tsx",
-                lineNumber: 748,
+                lineNumber: 750,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/components/notepad/editor-area.tsx",
-        lineNumber: 671,
+        lineNumber: 673,
         columnNumber: 5
     }, this);
 }
-_s(EditorArea, "gM69V6roK+SOvkVFTXCQQrV4hvY=");
+_s(EditorArea, "02lgKyWUVLsz8XQbMsHRK7ZoaO4=");
 _c = EditorArea;
 var _c;
 __turbopack_context__.k.register(_c, "EditorArea");

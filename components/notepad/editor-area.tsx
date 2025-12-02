@@ -60,6 +60,8 @@ function convertToPlainText(html: string): string {
   text = text.replace(/<del>(.*?)<\/del>/gi, "~~$1~~")
   // Remove any other HTML tags
   text = text.replace(/<[^>]*>/g, "")
+  // Remove zero-width spaces (used for cursor positioning)
+  text = text.replace(/\u200B/g, "")
   return text
 }
 
@@ -82,8 +84,15 @@ export function EditorArea({
   // Store the actual Range object to restore selection after context menu actions
   const savedRangeRef = useRef<Range | null>(null)
   const savedTextRef = useRef<string>("")
+  // Track if user is actively editing to prevent innerHTML sync from resetting cursor
+  const isEditingRef = useRef<boolean>(false)
 
   useEffect(() => {
+    // Skip innerHTML sync while user is actively editing to preserve cursor position
+    if (isEditingRef.current) {
+      isEditingRef.current = false
+      return
+    }
     if (editorRef.current) {
       const htmlContent = convertToHTML(file.content)
       if (editorRef.current.innerHTML !== htmlContent) {
@@ -637,6 +646,8 @@ export function EditorArea({
 
   const handleInput = () => {
     if (editorRef.current) {
+      // Set editing flag to prevent useEffect from resetting innerHTML and cursor
+      isEditingRef.current = true
       const plainText = convertToPlainText(editorRef.current.innerHTML)
       onContentChange(plainText)
     }
@@ -645,22 +656,13 @@ export function EditorArea({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter") {
       e.preventDefault()
-      const selection = window.getSelection()
-      if (!selection || selection.rangeCount === 0) return
-
-      const range = selection.getRangeAt(0)
-      range.deleteContents()
-
-      const br = document.createElement("br")
-      range.insertNode(br)
-
-      // Move cursor after the br
-      range.setStartAfter(br)
-      range.setEndAfter(br)
-      selection.removeAllRanges()
-      selection.addRange(range)
+      
+      // Use the browser's native line break insertion which handles cursor positioning correctly
+      document.execCommand("insertLineBreak")
 
       if (editorRef.current) {
+        // Set editing flag to prevent useEffect from resetting innerHTML and cursor
+        isEditingRef.current = true
         const plainText = convertToPlainText(editorRef.current.innerHTML)
         onContentChange(plainText)
       }
